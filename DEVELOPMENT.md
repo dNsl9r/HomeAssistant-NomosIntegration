@@ -136,10 +136,11 @@ pytest tests/
 
 ## Validating the manifest
 
-Use the official [HACS Action](https://github.com/hacs/action) or the HA integration validator:
+For a full manifest schema check, use the official [HACS Action](https://github.com/hacs/action) in CI or run the HA integration validator locally.
+
+The snippet below is a **minimal sanity-check only** — it verifies that a fixed set of commonly required keys are present, but does not validate values, types, or any other manifest constraints:
 
 ```bash
-pip install homeassistant-stubs
 python -c "
 import json, sys
 m = json.load(open('custom_components/nomos/manifest.json'))
@@ -147,7 +148,7 @@ required = {'domain','name','config_flow','documentation','iot_class','version',
 missing = required - m.keys()
 if missing:
     sys.exit(f'Missing manifest keys: {missing}')
-print('manifest.json OK')
+print('manifest.json OK (minimal key check)')
 "
 ```
 
