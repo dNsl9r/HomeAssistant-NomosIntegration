@@ -1,0 +1,11 @@
+{
+  "domain": "nomos",
+  "name": "Nomos Energy",
+  "config_flow": true,
+  "documentation": "https://github.com/dNsl9r/HomeAssistant-NomosIntegration",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "version": "1.0.0",
+  "requirements": [],
+  "codeowners": ["@dNsl9r"]
+}
