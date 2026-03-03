@@ -1,0 +1,79 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nomos Energy",
+        "description": "Enter your Nomos API client credentials. You can create an OAuth2 application in the [Nomos Dashboard](https://app.nomos.energy) to obtain a client ID and secret.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret"
+        },
+        "data_description": {
+          "client_id": "OAuth2 client ID issued by Nomos",
+          "client_secret": "OAuth2 client secret issued by Nomos"
+        }
+      },
+      "subscription": {
+        "title": "Select Subscription",
+        "description": "Multiple subscriptions found on this account. Select the one you want to integrate.",
+        "data": {
+          "subscription_id": "Subscription"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Nomos API. Check your network connection.",
+      "invalid_credentials": "Invalid client ID or client secret.",
+      "no_subscriptions": "No subscriptions found for this account."
+    },
+    "abort": {
+      "already_configured": "This Nomos subscription is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_price": {
+        "name": "Current Electricity Price"
+      },
+      "current_price_electricity": {
+        "name": "Current Electricity Component"
+      },
+      "current_price_grid": {
+        "name": "Current Grid Component"
+      },
+      "current_price_levies": {
+        "name": "Current Levies Component"
+      },
+      "average_price_today": {
+        "name": "Average Price Today"
+      },
+      "daily_consumption": {
+        "name": "Daily Consumption"
+      }
+    }
+  },
+  "services": {
+    "submit_meter_reading": {
+      "name": "Submit Meter Reading",
+      "description": "Submit an analog meter reading for a Nomos subscription.",
+      "fields": {
+        "subscription_id": {
+          "name": "Subscription ID",
+          "description": "The Nomos subscription ID (e.g. sub_rocbrf1u5e48mm0reeqoag90)."
+        },
+        "value": {
+          "name": "Reading Value",
+          "description": "The current cumulative meter value in kWh."
+        },
+        "timestamp": {
+          "name": "Timestamp",
+          "description": "ISO 8601 timestamp of the meter reading (e.g. 2024-03-14T12:00:00+00:00)."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Optional message from the submitter."
+        }
+      }
+    }
+  }
+}

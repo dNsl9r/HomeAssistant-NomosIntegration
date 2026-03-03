@@ -1,0 +1,25 @@
+submit_meter_reading:
+  fields:
+    subscription_id:
+      required: true
+      example: "sub_rocbrf1u5e48mm0reeqoag90"
+      selector:
+        text:
+    value:
+      required: true
+      example: 15000.5
+      selector:
+        number:
+          min: 0
+          step: 0.001
+          mode: box
+    timestamp:
+      required: true
+      example: "2024-03-14T12:00:00+00:00"
+      selector:
+        text:
+    message:
+      required: false
+      example: "Reading taken from the display"
+      selector:
+        text:
