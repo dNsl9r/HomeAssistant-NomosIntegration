@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Nomos Energy",
-        "description": "Enter your Nomos API client credentials. Contact Nomos support (e.g. svea-solar@nomos.energy for Svea Solar customers) to request a client ID and secret.",
+        "description": "Enter your Nomos API client credentials. Contact Nomos support (e.g. svea-solar@nomos.energy for Svea Solar customers) to obtain a client ID and secret.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret"

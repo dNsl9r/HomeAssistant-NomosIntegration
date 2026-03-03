@@ -138,7 +138,7 @@ class NomosConfigFlow(ConfigFlow, domain=DOMAIN):
             async with session.post(
                 f"{NOMOS_API_BASE}/oauth/token",
                 auth=aiohttp.BasicAuth(client_id, client_secret),
-                json={"grant_type": "client_credentials"},
+                data={"grant_type": "client_credentials"},
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 if resp.status == 401:
