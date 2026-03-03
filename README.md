@@ -59,7 +59,27 @@ Copy the `custom_components/nomos` folder into your `config/custom_components/` 
 
 ### Getting client credentials
 
-Register an OAuth2 application in the Nomos Dashboard to obtain a `client_id` and `client_secret`.  
+Credentials are issued by Nomos Energy support – they are **not** self-service.
+Contact the support address for your provider to request a `client_id` and `client_secret`:
+
+| Provider | Support e-mail |
+|---|---|
+| Svea Solar / Svea Strom | svea-solar@nomos.energy |
+| Other Nomos customers | support@nomos.energy |
+
+You will receive a JSON object like this:
+
+```json
+{
+  "display_name": "Your Name",
+  "client_id": "e6feec0...",
+  "client_secret": "3426f58...",
+  "role": "customer",
+  "api_version": "2025-12-16.batman",
+  "is_public": false
+}
+```
+
 The integration uses the **client_credentials** grant type to obtain and automatically renew short-lived access tokens – no manual token management required.
 
 ---

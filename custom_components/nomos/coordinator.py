@@ -60,7 +60,7 @@ class NomosDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             async with session.post(
                 f"{NOMOS_API_BASE}/oauth/token",
                 auth=aiohttp.BasicAuth(self._client_id, self._client_secret),
-                json={"grant_type": "client_credentials"},
+                data={"grant_type": "client_credentials"},
             ) as resp:
                 if resp.status == 401:
                     raise ConfigEntryAuthFailed("Invalid client credentials")
