@@ -64,6 +64,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 headers={"Authorization": f"Bearer {token}"},
                 json=payload,
             ) as resp:
+                if not resp.ok:
+                    body = await resp.text()
+                    _LOGGER.error(
+                        "Failed to submit meter reading for subscription %s: HTTP %s, payload=%s, response=%s",
+                        subscription_id,
+                        resp.status,
+                        payload,
+                        body,
+                    )
+                    return
                 resp.raise_for_status()
                 _LOGGER.info(
                     "Meter reading submitted for subscription %s (value=%s)",
