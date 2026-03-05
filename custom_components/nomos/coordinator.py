@@ -117,7 +117,6 @@ class NomosDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 f"{NOMOS_API_BASE}/subscriptions/{self.subscription_id}/consumption",
                 headers=headers,
                 params={
-                    "resolution": "day",
                     "start": seven_days_ago,
                     "end": today,
                 },

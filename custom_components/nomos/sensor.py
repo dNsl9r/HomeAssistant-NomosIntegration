@@ -38,7 +38,7 @@ def _get_current_price_item(data: dict[str, Any]) -> dict[str, Any] | None:
         ts = dt_util.parse_datetime(item["timestamp"])
         if ts is None:
             continue
-        if ts <= now_utc < ts + timedelta(hours=1):
+        if ts <= now_utc < ts + timedelta(minutes=15):
             return item
     return None
 
