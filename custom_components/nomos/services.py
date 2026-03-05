@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timezone
 from typing import Any
 
 import aiohttp
@@ -35,7 +36,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         """Submit an analog meter reading to Nomos."""
         subscription_id: str = call.data["subscription_id"]
         value: float = call.data["value"]
-        timestamp: str = call.data["timestamp"]
+        timestamp_raw: str = call.data["timestamp"]
+        # Nomos API requires UTC with Z suffix; normalize any tz-aware string.
+        from datetime import datetime
+        dt = datetime.fromisoformat(timestamp_raw)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone.utc)
+        timestamp = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         message: str | None = call.data.get("message")
 
         # Look up the coordinator that owns this subscription
