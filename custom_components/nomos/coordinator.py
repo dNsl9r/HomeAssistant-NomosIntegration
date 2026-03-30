@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 import logging
 import time
@@ -16,13 +17,26 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_SUBSCRIPTION_ID, DOMAIN, NOMOS_API_BASE
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_SUBSCRIPTION_ID,
+    DOMAIN,
+    NOMOS_API_BASE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 UPDATE_INTERVAL = timedelta(minutes=30)
 # Refresh the token this many seconds before it actually expires
 _TOKEN_REFRESH_BUFFER = 60
+
+# Transient HTTP status codes that warrant a retry
+_RETRYABLE_STATUSES = {502, 503, 504}
+# Number of retry attempts after the initial request fails
+_MAX_RETRIES = 3
+# Base delay in seconds for exponential back-off between retries
+_RETRY_BASE_DELAY = 2.0
 
 
 class NomosDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -80,6 +94,57 @@ class NomosDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._token_expires_at = time.monotonic() + expires_in
         _LOGGER.debug("Access token refreshed, expires in %s seconds", expires_in)
 
+    async def _async_get_with_retry(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        *,
+        headers: dict[str, str],
+        params: dict[str, str],
+    ) -> Any:
+        """Perform a GET request, retrying on transient server errors.
+
+        Raises:
+            ConfigEntryAuthFailed: on HTTP 401.
+            UpdateFailed: after all retries are exhausted or on a non-retryable error.
+            aiohttp.ClientError: on unexpected connection-level errors (caller may re-raise).
+        """
+        last_err: Exception | None = None
+        for attempt in range(_MAX_RETRIES + 1):
+            if attempt:
+                delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                _LOGGER.warning(
+                    "Transient error from %s (attempt %d/%d), retrying in %.0f s",
+                    url,
+                    attempt,
+                    _MAX_RETRIES,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+            try:
+                async with session.get(url, headers=headers, params=params) as resp:
+                    if resp.status == 401:
+                        raise ConfigEntryAuthFailed(
+                            "Access token rejected by API endpoint"
+                        )
+                    if resp.status in _RETRYABLE_STATUSES:
+                        last_err = UpdateFailed(
+                            f"Transient error from API: {resp.status}"
+                        )
+                        continue
+                    resp.raise_for_status()
+                    return await resp.json()
+            except ConfigEntryAuthFailed:
+                raise
+            except aiohttp.ClientResponseError as err:
+                raise UpdateFailed(f"Error fetching data: {err}") from err
+            except aiohttp.ClientError:
+                raise
+
+        raise UpdateFailed(
+            f"API still unavailable after {_MAX_RETRIES} retries: {last_err}"
+        )
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch prices and consumption from the Nomos API."""
         token = await self.async_get_access_token()
@@ -94,36 +159,29 @@ class NomosDataCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Fetch prices for today and tomorrow
         prices_data: dict[str, Any] = {}
         try:
-            async with session.get(
+            prices_data = await self._async_get_with_retry(
+                session,
                 f"{NOMOS_API_BASE}/subscriptions/{self.subscription_id}/prices",
                 headers=headers,
                 params={"start": today, "end": tomorrow},
-            ) as resp:
-                if resp.status == 401:
-                    raise ConfigEntryAuthFailed("Access token rejected by prices endpoint")
-                resp.raise_for_status()
-                prices_data = await resp.json()
+            )
         except ConfigEntryAuthFailed:
             raise
-        except aiohttp.ClientResponseError as err:
-            raise UpdateFailed(f"Error fetching prices: {err}") from err
+        except UpdateFailed:
+            raise
         except aiohttp.ClientError as err:
             raise UpdateFailed(f"Connection error fetching prices: {err}") from err
 
         # Fetch consumption for the last 7 days at daily resolution
         consumption_data: dict[str, Any] = {}
         try:
-            async with session.get(
+            consumption_data = await self._async_get_with_retry(
+                session,
                 f"{NOMOS_API_BASE}/subscriptions/{self.subscription_id}/consumption",
                 headers=headers,
-                params={
-                    "start": seven_days_ago,
-                    "end": today,
-                },
-            ) as resp:
-                resp.raise_for_status()
-                consumption_data = await resp.json()
-        except aiohttp.ClientError as err:
+                params={"start": seven_days_ago, "end": today},
+            )
+        except (aiohttp.ClientError, UpdateFailed) as err:
             _LOGGER.warning("Could not fetch consumption data: %s", err)
 
         return {
